@@ -1,4 +1,5 @@
 'use client';
+import { Suspense } from 'react';
 import { PartnersDataTable, PartnersFilterBar } from '@/modules/partners';
 import { AppProvider } from '@/providers';
 
@@ -17,7 +18,9 @@ export function PartnersListView() {
             </h2>
           </div>
 
-          <PartnersFilterBar />
+          <Suspense>
+            <PartnersFilterBar />
+          </Suspense>
         </div>
         <div className="px-8 py-4">
           <PartnersDataTable />
