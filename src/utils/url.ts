@@ -1,8 +1,10 @@
+import qs from 'qs';
+
 type Filters = Record<string, string[]>;
 
 interface QueryStringParams {
-  search: string;
-  filters: Filters;
+  search?: string;
+  filters?: Filters;
 }
 
 /**
@@ -10,41 +12,32 @@ interface QueryStringParams {
  * @example { search: 'foo', filters: { type: ['bar', 'baz'] } } -> 'search=foo&filter[type]=bar,baz'
  */
 export function createQueryString({ search, filters }: QueryStringParams) {
-  const searchParams = new URLSearchParams();
-
-  if (search) {
-    searchParams.set('search', search);
-  }
-
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value.length > 0) {
-      searchParams.set(`filter[${key}]`, value.join(','));
-    }
-  });
-
-  return decodeURIComponent(searchParams.toString());
+  return qs.stringify(
+    { search: search || null, filters },
+    {
+      arrayFormat: 'comma',
+      encode: false,
+      skipNulls: true,
+    },
+  );
 }
 
 /***
  * Converts search and filters to query string (for Mock API).
  * @example { search: 'foo', filters: { type: ['bar', 'baz'] } } -> 'search=foo&type=bar|baz'
  */
-export function createQueryStringForApi({
-  search,
-  filters,
-}: QueryStringParams) {
-  const searchParams = new URLSearchParams();
-  if (search) {
-    searchParams.set('search', search);
-  }
-
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value.length > 0) {
-      searchParams.set(key, value.join('|'));
-    }
-  });
-
-  return decodeURIComponent(searchParams.toString());
+export function createQueryStringForApi(params: QueryStringParams) {
+  const { search, filters } = params;
+  return qs
+    .stringify(
+      { search: search || null, ...filters },
+      {
+        arrayFormat: 'comma',
+        encode: false,
+        skipNulls: true,
+      },
+    )
+    .replaceAll(',', '|');
 }
 
 /**
@@ -53,11 +46,25 @@ export function createQueryStringForApi({
  * @example 'search=foo&filter[type]=bar,baz' -> { search: 'foo', filters: { type: ['bar', 'baz'] } }
  */
 export function createObjectFromQueryString(
-  searchParams: URLSearchParams,
+  queryString: string,
 ): QueryStringParams {
-  const search = searchParams.get('search') || '';
-  const status = searchParams.get('filter[status]')?.split(',') || [];
-  const category = searchParams.get('filter[category]')?.split(',') || [];
+  const parsed = qs.parse(queryString);
 
-  return { search, filters: { status, category } };
+  const result: QueryStringParams = {
+    search: (parsed?.search as string) ?? '',
+    filters: {},
+  };
+
+  if (parsed?.search) {
+    result.search = parsed.search as string;
+  }
+
+  if (parsed?.filters) {
+    Object.keys(parsed.filters).forEach((key) => {
+      // @ts-ignore
+      result.filters[key] = parsed?.filters?.[key]?.split(',') ?? [];
+    });
+  }
+
+  return result;
 }

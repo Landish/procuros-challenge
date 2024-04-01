@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useFiltersStore } from '@/store';
-import { createQueryString } from '@/utils';
+import { createObjectFromQueryString, createQueryString } from '@/utils';
 
 /**
  * Hook that synchronizes partners filters with query params and vice versa
@@ -15,7 +15,12 @@ export function usePartnersFilterSync() {
    */
   useEffect(() => {
     if (initialized) return;
-    initFilters(searchParams);
+
+    const { search = '', filters = {} } = createObjectFromQueryString(
+      searchParams.toString(),
+    );
+
+    initFilters({ search, filters });
   }, [initialized, initFilters, searchParams]);
 
   /**

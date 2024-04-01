@@ -1,5 +1,3 @@
-import { createObjectFromQueryString } from '@/utils';
-
 import { create } from 'zustand';
 
 type AvailableFilters = 'status' | 'category' | string;
@@ -12,7 +10,7 @@ interface FiltersState {
 
 interface FiltersActions {
   setSearch: (query: string) => void;
-  initFilters: (searchParams: URLSearchParams) => void;
+  initFilters: (params: Pick<FiltersState, 'search' | 'filters'>) => void;
   setFilter: (name: AvailableFilters, value: string[]) => void;
   removeFromFilter: (name: AvailableFilters, value: string) => void;
   reset: () => void;
@@ -21,21 +19,21 @@ interface FiltersActions {
 export const useFiltersStore = create<FiltersState & FiltersActions>((set) => ({
   initialized: false,
   search: '',
-  filters: {
-    status: [],
-    category: [],
-  },
-  // Actions
+  filters: {},
   setSearch: (query) => set((state) => ({ ...state, search: query })),
-  initFilters: (searchParams) => {
-    const { search, filters } = createObjectFromQueryString(searchParams);
-    set({ initialized: true, search, filters });
+  initFilters: ({ search, filters }) => {
+    set({
+      initialized: true,
+      search,
+      filters,
+    });
   },
   setFilter: (name, value) =>
     set((state) => ({
       ...state,
       filters: { ...state.filters, [name]: value },
     })),
+
   removeFromFilter: (name, value) => {
     set((state) => {
       const current = state.filters?.[name];
@@ -54,9 +52,6 @@ export const useFiltersStore = create<FiltersState & FiltersActions>((set) => ({
     set({
       initialized: true,
       search: '',
-      filters: {
-        status: [],
-        category: [],
-      },
+      filters: {},
     }),
 }));

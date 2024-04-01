@@ -1,11 +1,27 @@
 'use client';
+import { useCallback, useMemo } from 'react';
+import debounce from 'lodash.debounce';
 import { Input, Select } from '@/components';
 import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
 import { getPartnerCategories, getPartnerStatuses } from '@/modules/partners';
 import { useFiltersStore } from '@/store';
 
+const SEARCH_INPUT_DEBOUNCE_MS = 350;
+
 export function PartnersFilterBarForm() {
   const { search, setSearch, filters, setFilter } = useFiltersStore();
+
+  const changeSearchHandler = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearch(e.target.value);
+    },
+    [setSearch],
+  );
+
+  const debouncedChangeHandler = useMemo(
+    () => debounce(changeSearchHandler, SEARCH_INPUT_DEBOUNCE_MS),
+    [changeSearchHandler],
+  );
 
   const FILTER_FIELDS = [
     {
@@ -27,8 +43,9 @@ export function PartnersFilterBarForm() {
       <div className="col-span-2">
         <Input
           type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          key={search}
+          defaultValue={search}
+          onChange={debouncedChangeHandler}
           placeholder="Search 10.328 partners"
           icon={
             <MagnifyingGlassIcon
@@ -42,7 +59,7 @@ export function PartnersFilterBarForm() {
       {FILTER_FIELDS.map(({ name, label, options, multiple }) => (
         <Select
           /**
-           * We need to add the key prop to the Select component to force it to re-render
+           * We need to add the `key` prop to the Select component to force it to re-render
            */
           key={name + filters?.[name]?.toString()}
           label={label}
